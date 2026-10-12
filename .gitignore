@@ -1,0 +1,9 @@
+# 依赖与构建产物（本插件零依赖，通常不会产生 node_modules）
+node_modules/
+pnpm-lock.yaml
+package-lock.json
+
+# 本地调试
+*.log
+.DS_Store
+Thumbs.db

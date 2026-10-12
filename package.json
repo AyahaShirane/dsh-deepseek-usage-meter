@@ -1,0 +1,51 @@
+{
+  "name": "dsh-deepseek-usage-meter",
+  "version": "1.0.0",
+  "description": "DSH 插件：在输入栏统计条内显示本次会话的 DeepSeek 官方渠道开销与账户剩余额度",
+  "type": "module",
+  "main": "lib/index.js",
+  "exports": {
+    ".": {
+      "default": "./lib/index.js"
+    },
+    "./client": {
+      "default": "./lib/client.js"
+    },
+    "./package.json": "./package.json"
+  },
+  "files": [
+    "lib/index.js",
+    "lib/client.js",
+    "cordis.patch.yml",
+    "README.md",
+    "LICENSE"
+  ],
+  "license": "MIT",
+  "author": "AyahaShirane",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/AyahaShirane/dsh-deepseek-usage-meter.git"
+  },
+  "homepage": "https://github.com/AyahaShirane/dsh-deepseek-usage-meter#readme",
+  "bugs": {
+    "url": "https://github.com/AyahaShirane/dsh-deepseek-usage-meter/issues"
+  },
+  "keywords": [
+    "dsh",
+    "deepseek",
+    "deepseek-harness",
+    "plugin",
+    "cost",
+    "balance",
+    "token-usage"
+  ],
+  "dsh": {
+    "manifestVersion": 1,
+    "bundle": {
+      "patch": "./cordis.patch.yml"
+    },
+    "client": {
+      "platform": "web"
+    }
+  }
+}

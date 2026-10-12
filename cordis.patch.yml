@@ -1,0 +1,11 @@
+# DeepSeek 官方渠道开销计量的 bundle 补丁。
+#
+# 本包同时是 Host 行与浏览器行：
+# - `lib/index.js`（Host 半边）注册客户端可见的 `deepseekCost` session projection，
+#   把会话日志里的 provider/model 与提供方回报的 token 用量折成一份账本；
+# - `lib/client.js`（浏览器半边，经 package.json 的 `dsh.client` 声明被发现）
+#   在输入栏渲染常驻指示器，并按 DeepSeek 官方价目表把 token 折成金额。
+
+- insert:
+    - id: deepseek-usage-meter
+      name: 'dsh-deepseek-usage-meter'
