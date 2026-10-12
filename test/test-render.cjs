@@ -114,7 +114,9 @@ const wireView = {
   },
   windowRule: 'cn-beijing-weekday-peak',
 }
-const face = { getSnapshot: () => wireView, subscribe: () => () => {} }
+/** session 上的 `deepseekCost` face；快照可切换，用来驱动激活门控的断言。 */
+let faceValue = wireView
+const face = { getSnapshot: () => faceValue, subscribe: () => () => {} }
 let registered = null
 let balanceCalls = 0
 /** 假的 remote.account 命名空间服务（网关把它装成独立的 Cordis 服务）。
@@ -227,6 +229,46 @@ assert.equal(strong.children[0], '≈¥0.8457', `chip 金额应为 ≈¥0.8457�
 const dim = chip.children[4]
 assert.equal(dim.children[0], '余额 读取中…')
 assert.equal(tree.children[1], null, '面板默认关闭')
+
+// ── 激活门控：Host 未检测到官方渠道时 projection 缺席，指示器什么都不渲染 ──
+faceValue = undefined
+assert.equal(render({}), null, 'projection 缺席时不得渲染指示器')
+faceValue = null
+assert.equal(render({}), null, 'projection 为 null 时不得渲染指示器')
+
+// ── 激活门控：本会话只有非官方渠道用量时同样不渲染（避免别家 provider 上出现 ¥0） ──
+const foreignBuckets = [
+  {
+    provider: 'openai',
+    model: 'gpt-x',
+    window: 'off',
+    uncachedInputTokens: 10,
+    cacheReadTokens: 0,
+    cacheWriteTokens: 0,
+    outputTokens: 5,
+  },
+]
+const foreignView = {
+  ...wireView,
+  buckets: foreignBuckets,
+  totals: { uncachedInputTokens: 10, cacheReadTokens: 0, cacheWriteTokens: 0, outputTokens: 5 },
+}
+faceValue = foreignView
+assert.equal(render({}), null, '只有非官方渠道用量时不得渲染')
+// 混合会话（官方 + 别家）仍然显示，因为官方渠道确实在用
+const mixedView = {
+  ...wireView,
+  buckets: [...wireView.buckets, ...foreignBuckets],
+  totals: {
+    uncachedInputTokens: wireView.totals.uncachedInputTokens + 10,
+    cacheReadTokens: wireView.totals.cacheReadTokens,
+    cacheWriteTokens: 0,
+    outputTokens: wireView.totals.outputTokens + 5,
+  },
+}
+faceValue = mixedView
+assert.ok(render({}) !== null, '官方 + 别家的混合会话仍应显示')
+faceValue = wireView
 
 // ── 驱动 effect（余额拉取） ────────────────────────────────────────────────
 render({ useProjection: () => wireView })

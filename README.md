@@ -39,7 +39,21 @@
 
 缓存写入（`cache_creation_input_tokens`）按**缓存未命中**价计入——DeepSeek 未单列缓存写入价格。
 
-## 实现结构插件同时是 Host 行与浏览器行，一个包里两半：
+## 激活条件
+
+只在检测到 **DeepSeek 官方渠道**时才激活，两层判定：
+
+1. **Host**：`ctx.llm.listProviders()` 里出现 `deepseek-official`（官方 API Key 渠道）或
+   `deepseek-account`（官方账号渠道）才注册 `deepseekCost` 投影；没有官方路由时插件完全不生效。
+   路由在运行期可能增减（改配置、换 provider），所以监听 `llm/adapters-updated` 动态挂上/摘下，
+   而不是只在激活那一刻判定一次。
+2. **浏览器**：投影缺席＝官方渠道不在场，指示器整枚不渲染，也不会去查余额。另外，如果本会话
+   确实有调用但**全部**走非官方路由，同样不显示（避免在别家 provider 上看到一枚 ¥0 的指示器）；
+   官方与非官方混用的会话照常显示。
+
+## 实现结构
+
+插件同时是 Host 行与浏览器行，一个包里两半：
 
 - `lib/index.js`（Host 半边）：注册客户端可见的会话投影 `deepseekCost`，把
   "这一次请求走的是哪个 provider/model" 与"提供方回报了多少 token"折进同一份账本，

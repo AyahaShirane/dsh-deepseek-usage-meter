@@ -5,23 +5,62 @@
 import assert from 'node:assert/strict'
 import { apply } from '../lib/index.js'
 
-let captured = null
+let registered = null
+let registrations = 0
+let disposals = 0
+/** 可切换的假 llm 服务：验证「只在检测到 DeepSeek 官方渠道时激活」。 */
+let providers = []
+const listeners = new Map()
+
 const scope = {
   sessionProjections: {
     register: (definition) => {
-      captured = definition
-      return () => {}
+      registered = definition
+      registrations += 1
+      return () => {
+        registered = null
+        disposals += 1
+      }
     },
+  },
+  get: (name) => (name === 'llm' ? { listProviders: () => providers } : undefined),
+  on: (event, handler) => {
+    listeners.set(event, handler)
+    return () => listeners.delete(event)
   },
   effect: (factory) => factory(),
 }
 apply({ inject: (deps, callback) => callback(scope) })
 
+// ── 激活门控 ──────────────────────────────────────────────────────────────
+assert.equal(registrations, 0, '没有任何官方路由时不得注册 projection')
+providers = [{ id: 'openai', name: 'OpenAI' }]
+listeners.get('llm/adapters-updated')()
+assert.equal(registrations, 0, '只有别家 provider 时不得注册')
+
+providers = [{ id: 'deepseek-account', name: 'DeepSeek' }]
+listeners.get('llm/adapters-updated')()
+assert.equal(registrations, 1, '检测到官方账号渠道后应注册')
+
+const captured = registered
 assert.ok(captured !== null, 'apply() 必须注册 projection')
 assert.equal(captured.key, 'deepseekCost')
 assert.equal(captured.stateVersion, 1)
 assert.equal(typeof captured.apply, 'function')
 assert.ok(captured.wire !== undefined, 'projection 必须带 wire 块才对客户端可见')
+
+providers = [{ id: 'openai', name: 'OpenAI' }, { id: 'anthropic', name: 'Anthropic' }]
+listeners.get('llm/adapters-updated')()
+assert.equal(disposals, 1, '官方路由消失后应摘掉 registration')
+assert.equal(registered, null)
+
+providers = [{ id: 'deepseek-official', name: 'DeepSeek API Key' }]
+listeners.get('llm/adapters-updated')()
+assert.equal(registrations, 2, '官方 API Key 渠道同样应激活')
+
+providers = [{ id: 'deepseek-official', name: 'DeepSeek API Key' }]
+listeners.get('llm/adapters-updated')()
+assert.equal(registrations, 2, '门控是幂等的：路由没变不得重复注册')
 
 /** 事件构造：北京时间 -> epoch 毫秒。 */
 const beijing = (iso, hour, minute = 0) => Date.parse(`${iso}T00:00:00.000Z`) + (hour * 60 + minute) * 60000 - 8 * 3600000

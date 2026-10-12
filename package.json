@@ -1,6 +1,6 @@
 {
   "name": "dsh-deepseek-usage-meter",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "description": "DSH 插件：在输入栏统计条内显示本次会话的 DeepSeek 官方渠道开销与账户剩余额度",
   "type": "module",
   "main": "lib/index.js",
